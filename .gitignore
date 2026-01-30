@@ -1,0 +1,40 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data (keep documentation, exclude large CSVs/ZIPs for git)
+dados_trabalho/output/*.csv
+dados_trabalho/output/*.zip
+dados_trabalho/output/*.json
+dados_trabalho/1T2025/
+dados_trabalho/2T2025/
+dados_trabalho/3T2025/
+
+# OS
+.DS_Store
+.env
