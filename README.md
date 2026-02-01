@@ -1,35 +1,75 @@
+# Desafio ANS — Código (PT / EN)
+
+Objetivo / Goal
+- PT: Código para importar, validar e expor dados consolidados de despesas da ANS.
+- EN: Code to ingest, validate and expose consolidated ANS expenses data.
+
+Onde está o guia de uso
+- O passo a passo para executar e carregar os CSVs está em `GUIA_USO.md`.
+  Use esse arquivo para comandos de `psql \copy`, variáveis de ambiente e exemplos.
+
+Estrutura do código / Code layout
+- `sql/` — criação de tabelas e exemplos de ingestão (staging → final).
+- `backend/` — FastAPI app (`backend/main.py`) com endpoints:
+  - `GET /api/operadoras` (paginação, busca)
+  - `GET /api/operadoras/{cnpj}`
+  - `GET /api/operadoras/{cnpj}/despesas`
+  - `GET /api/estatisticas` (cache TTL)
+- `frontend/` — Vue app (exemplo de consumo da API).
+- `tests/` — testes automatizados com `pytest` (validação de endpoints).
+- `postman/` — coleção com exemplos de chamadas.
+
+Executar rapidamente (resumo)
+- Preparar banco e carregar o SQL: veja `sql/teste3_sql_scripts.sql` e `GUIA_USO.md`.
+- Rodar backend:
+  ```powershell
+  .venv\Scripts\Activate.ps1
+  uvicorn backend.main:app --reload
+  ```
+- Rodar frontend:
+  ```powershell
+  cd frontend
+  npm install
+  npm run dev
+  ```
+- Testes:
+  ```powershell
+  .venv\Scripts\Activate.ps1
+  pytest -q
+  ```
+
+Observações técnicas rápidas
+- Paginação: `page` + `limit` (offset-based).
+- Estatísticas: resposta com cache em memória; TTL configurável por `STATS_CACHE_SECONDS`.
+- Import recomendado: carregar CSVs em `staging_` e transformar/validar antes de inserir em `consolidado_despesas`.
+
+Contribuições / How to contribute
+- Faça fork, crie branch, abra PR. Testes automáticos com `pytest`.
+
+Licença / License
+- Código entregue como exercício — sem licença específica.
+
+---
+Se quiser, eu deixo uma versão ainda mais curta (apenas estrutura de código) ou adiciono exemplos concretos de `psql \copy` no `README`.
 # Teste de Integração com API Pública ANS - Guia Completo
 
 ## 📋 Resumo do Projeto
 
 Este projeto baixa dados de Despesas com Eventos/Sinistros dos últimos 3 trimestres da API da ANS (Agência Nacional de Saúde Suplementar), consolida os dados de múltiplos formatos e gera um arquivo CSV único, tratando automaticamente inconsistências encontradas.
 
----
 
 ## 🎯 Objetivos Alcançados
 
 ### 1. **Acesso à API da ANS** ✓
-- Conecta à API REST: `https://dadosabertos.ans.gov.br/FTP/PDA/`
-- Identifica automaticamente os últimos 3 trimestres disponíveis
-- Navega pela estrutura de diretórios (YYYY/QQ/)
-- Resiliente a variações de estrutura
 
 ### 2. **Processamento de Arquivos** ✓
-- Baixa arquivos ZIP automaticamente
-- Extrai conteúdos ZIP
-- **Identifica automaticamente** arquivos com dados de Despesas/Sinistros
-- **Processa múltiplos formatos**: CSV, TXT, XLSX
-- **Normaliza estruturas variadas** de colunas
 
 ### 3. **Consolidação e Análise** ✓
-- Consolida em um único CSV com colunas padronizadas
-- **Trata 4 tipos de inconsistências**:
   1. CNPJs duplicados com razões sociais diferentes
   2. Valores zerados ou negativos
   3. Trimestres com formatos variados
   4. Anos incompletos
 
----
 
 ## 📊 Estrutura de Decisão Técnica
 
@@ -47,19 +87,57 @@ OPÇÃO 2: Processamento Incremental (ESCOLHIDA)
 ├─ ✓ Memória eficiente
 # Teste de Integração com API Pública ANS - Guia Consolidado
 
+Português / English
+
+Objetivo
+- Processar e consolidar dados de despesas (eventos/sinistros) da ANS.
+
+Conteúdo do repositório
+- `sql/` — DDL e exemplos de ingestão
+- `backend/` — API FastAPI (`/api/operadoras`, `/api/estatisticas`, etc.)
+- `frontend/` — app Vue (tabela + gráfico)
+- `tests/` — testes pytest
+- `postman/` — coleção de chamadas
+
+Execução rápida (Windows)
+1) Ative o ambiente e instale dependências:
+```powershell
+.venv\Scripts\Activate.ps1
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+2) Criar esquema e carregar staging (ajuste host/user/db):
+```powershell
+
 Este repositório implementa uma solução completa para baixar, normalizar e consolidar os dados de despesas (eventos/sinistros) fornecidos pela ANS. Contém scripts SQL para criação/esquema, um backend em FastAPI com endpoints para consulta, um frontend Vue mínimo para visualização e testes automatizados com pytest.
 
+3) Rodar backend:
+```powershell
 Principais pontos:
 - SQL: `sql/teste3_sql_scripts.sql` — DDL, tabelas de staging e queries analíticas.
 - Backend: `backend/main.py` — API com endpoints para listar `operadoras`, obter detalhes e estatísticas.
+4) Rodar frontend:
+```powershell
 - Frontend: `frontend/src/` — componente de tabela e gráfico (Chart.js).
 - Testes: `tests/` — testes pytest cobrindo endpoints principais.
 
 ## Como rodar (resumo rápido)
 
+5) Rodar testes:
+```powershell
 1. Ative o ambiente virtual (Windows PowerShell):
 ```powershell
 .venv\\Scripts\\Activate.ps1
+
+Observações rápidas
+- Paginação: `page` + `limit` (offset-based)
+- Estatísticas têm cache em memória com TTL
+- Import recomendado: carregar CSVs em `staging_` e transformar para as tabelas finais
+
+English (short)
+Goal: download, normalize and consolidate ANS expense datasets.
+Run: create DB schema (`sql/teste3_sql_scripts.sql`), start backend (`uvicorn backend.main:app`), run frontend (`npm run dev`). Tests: `pytest`.
+
+Se quiser um README mais detalhado (com exemplos de `psql \copy`, variáveis de ambiente e troubleshooting), eu adiciono em seguida.
 ```
 2. Instale dependências (se necessário):
 ```powershell
