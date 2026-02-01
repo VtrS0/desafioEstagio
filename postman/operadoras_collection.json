@@ -1,0 +1,42 @@
+{
+  "info": {
+    "name": "Operadoras API",
+    "_postman_id": "operadoras-collection",
+    "description": "Collection for operadoras endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List operadoras",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "http://localhost:8000/api/operadoras?page=1&limit=10", "host": ["http://localhost:8000"], "path": ["api","operadoras"] }
+      }
+    },
+    {
+      "name": "Operadora details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "http://localhost:8000/api/operadoras/{{cnpj}}", "host": ["http://localhost:8000"], "path": ["api","operadoras","{{cnpj}}"] }
+      }
+    },
+    {
+      "name": "Operadora despesas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "http://localhost:8000/api/operadoras/{{cnpj}}/despesas", "host": ["http://localhost:8000"], "path": ["api","operadoras","{{cnpj}}","despesas"] }
+      }
+    },
+    {
+      "name": "Estatisticas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "http://localhost:8000/api/estatisticas", "host": ["http://localhost:8000"], "path": ["api","estatisticas"] }
+      }
+    }
+  ]
+}

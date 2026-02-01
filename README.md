@@ -45,237 +45,67 @@ OPÇÃO 1: Tudo em Memória
 
 OPÇÃO 2: Processamento Incremental (ESCOLHIDA)
 ├─ ✓ Memória eficiente
-├─ ✓ Falha isolada por trimestre
-├─ ✓ Monitoramento de progresso
-├─ ✓ Escalável para volumes maiores
-└─ Apenas 2-3% mais lento
+# Teste de Integração com API Pública ANS - Guia Consolidado
+
+Este repositório implementa uma solução completa para baixar, normalizar e consolidar os dados de despesas (eventos/sinistros) fornecidos pela ANS. Contém scripts SQL para criação/esquema, um backend em FastAPI com endpoints para consulta, um frontend Vue mínimo para visualização e testes automatizados com pytest.
+
+Principais pontos:
+- SQL: `sql/teste3_sql_scripts.sql` — DDL, tabelas de staging e queries analíticas.
+- Backend: `backend/main.py` — API com endpoints para listar `operadoras`, obter detalhes e estatísticas.
+- Frontend: `frontend/src/` — componente de tabela e gráfico (Chart.js).
+- Testes: `tests/` — testes pytest cobrindo endpoints principais.
+
+## Como rodar (resumo rápido)
+
+1. Ative o ambiente virtual (Windows PowerShell):
+```powershell
+.venv\\Scripts\\Activate.ps1
+```
+2. Instale dependências (se necessário):
+```powershell
+.venv\\Scripts\\python.exe -m pip install -r requirements.txt
+```
+3. Preparar Banco Postgres e rodar scripts SQL (ajuste conexões):
+```powershell
+# executar via psql para carregar staging e criar tabelas
+psql -h <host> -U <user> -d <db> -f sql/teste3_sql_scripts.sql
+```
+4. Rodar backend:
+```powershell
+uvicorn backend.main:app --reload
+```
+5. Rodar frontend (dentro de `frontend/`):
+```powershell
+npm install
+npm run dev
 ```
 
-**Justificativa:**
-- Volumes de dados da ANS podem exceder 100MB
-- Melhor tratamento de erros (falha isolada)
-- Permite recuperação e retentativa
-- Essencial para ambientes com recursos limitados
+## Decisões técnicas (resumo)
+
+- Banco: PostgreSQL (>=10). Usado por suporte a JSONB, funções analíticas e COPY para import.
+- Import: padrão de staging (`staging_*`) + `\\copy` via `psql`, limpar/validar antes de inserir nas tabelas finais.
+- Tipos: `DECIMAL(15,2)` para valores monetários; datas armazenadas como `DATE` (representando início do trimestre).
+- Paginação API: offset-based (`page`, `limit`) por simplicidade; sugerido keyset para cargas maiores.
+- Cache: rota `/api/estatisticas` com cache em memória e TTL configurável; em produção recomendar Redis ou materialized views.
+
+## Onde olhar primeiro
+
+- `sql/teste3_sql_scripts.sql` — criar esquema e exemplos de ingestão.
+- `backend/main.py` — rotas e padrões de consulta.
+- `frontend/src/components/OperadorasTable.vue` — exemplo de consumo e paginação.
+- `tests/test_backend.py` — exemplos de como os endpoints são validados automaticamente.
+
+## Arquivos de documentação extras
+
+Mantive algumas notas técnicas em `README_TESTE3.md`; se preferir, posso arquivar arquivos longos (`EXPLICACAO_COMPLETA.md`, `INDICE.md`, etc.) em `docs/archive/` para deixar o `README.md` mais enxuto.
 
 ---
 
-## 🔍 Tratamento de Inconsistências
+Se quiser, posso agora:
+- Consolidar/remover os `.md` opcionais para `docs/archive/` (arquivar), e
+- Continuar removendo comentários com tom de IA nos outros arquivos do repositório.
 
-### 1️⃣ **CNPJs Duplicados com Razões Sociais Diferentes**
-```
-Situação: CNPJ 12.345.678/0001-90
-          - Razão Social A
-          - Razão Social B
-
-Ação: MANTÉM ambos, marca com flag "DUPLICADO_SUSPEITO"
-Motivo: Pode indicar:
-  • Fusão/incorporação
-  • Renomeação da empresa
-  • Erro de lançamento
-  
-Recomendação: Revisar manualmente
-```
-
-### 2️⃣ **Valores Zerados**
-```
-Situação: Linha com valor = 0
-
-Ação: MANTÉM a linha com status='ZERADO'
-Motivo: 
-  • Pode ser legítimo (sem despesas no trimestre)
-  • Importante para auditoria
-  
-Resultado: Não distorce totalizações
-```
-
-### 3️⃣ **Valores Negativos**
-```
-Situação: Linha com valor < 0
-
-Ação: REMOVE a linha
-Motivo:
-  • Deveriam ser créditos/devoluções (outras tabelas)
-  • Inversão de sinal indicaria erro
-  
-Log: Registrado em relatorio_inconsistencias.json
-```
-
-### 4️⃣ **Formatos de Data/Trimestre**
-```
-Conversões Automáticas:
-  • Q1, Q2, Q3, Q4 → 01, 02, 03, 04
-  • 1, 2, 3, 4 → 01, 02, 03, 04
-  • Ano "24" → "2024"
-  • Ano "2024" → "2024" (mantém)
-```
-
----
-
-## 📁 Estrutura de Arquivos
-
-```
-desafioEstagio/
-│
-├── ans_integration.py          # Script principal
-├── README.md                   # Este arquivo
-│
-└── dados_trabalho/             # Criado automaticamente
-    ├── downloads/              # Arquivos ZIP baixados
-    │   ├── 2024_03_file1.zip
-    │   ├── 2024_02_file2.zip
-    │   └── 2024_01_file3.zip
-    │
-    ├── extraido/               # Arquivos extraídos
-    │   ├── Despesas_2024_Q3.csv
-    │   ├── Sinistros_2024_Q2.xlsx
-    │   └── ...
-    │
-    └── output/                 # Resultados finais ⭐
-        ├── consolidado_despesas.csv        # CSV final
-        ├── relatorio_inconsistencias.json  # Detalhes
-        └── consolidado_despesas.zip        # Arquivo entregável
-```
-
----
-
-## 🚀 Como Usar
-
-### Pré-requisitos
-- Python 3.13+
-- Conexão com Internet
-- 200 MB de espaço livre (aproximado)
-
-### Passo 1: Executar o Script
-
-```bash
-python ans_integration.py
-```
-
-### Passo 2: Saída Esperada
-
-```
-╔════════════════════════════════════════════════════════════════════════════╗
-║          TESTE DE INTEGRAÇÃO COM API PÚBLICA ANS                          ║
-║     Consolidação de Despesas com Eventos/Sinistros - Últimos 3 Trimestres ║
-╚════════════════════════════════════════════════════════════════════════════╝
-
-================================================================================
-PASSO 1: DESCOBRINDO TRIMESTRES DISPONÍVEIS NA API ANS
-================================================================================
-
-✓ Conexão com API estabelecida: https://dadosabertos.ans.gov.br/FTP/PDA/
-✓ Status: 200
-✓ Anos encontrados: ['2024', '2023']
-✓ Explorando trimestres disponíveis...
-  → 2024/03/
-  → 2024/02/
-  → 2024/01/
-
-✓ Selecionados 3 trimestres para processamento:
-  → 2024/Q03
-  → 2024/Q02
-  → 2024/Q01
-
-[... passo 2, 3, 4, 5, 6 ...]
-
-✓ PROCESSO FINALIZADO COM SUCESSO!
-================================================================================
-```
-
-### Passo 3: Localizar Resultado
-
-```
-📦 Localização: c:\Users\AMD\Documents\desafioEstagio\dados_trabalho\output\
-
-Arquivos gerados:
-  ✓ consolidado_despesas.zip ← ARQUIVO PRINCIPAL
-  ✓ consolidado_despesas.csv ← Dados processados
-  ✓ relatorio_inconsistencias.json ← Relatório técnico
-```
-
----
-
-## 📋 Formato do CSV de Saída
-
-### Colunas
-```
-CNPJ              | RazaoSocial        | Trimestre | Ano  | ValorDespesas | Status
-12.345.678/001-90 | Empresa XYZ Ltda   | 03        | 2024 | 150000.00     | OK
-98.765.432/001-10 | Operadora ABC      | 03        | 2024 | 0.00          | ZERADO
-...
-```
-
-### Exemplo de Dados
-```csv
-CNPJ,RazaoSocial,Trimestre,Ano,ValorDespesas,Status
-12.345.678/0001-90,OPERADORA A,01,2024,1500000.50,OK
-12.345.678/0001-90,OPERADORA A,02,2024,1600000.75,OK
-98.765.432/0001-10,OPERADORA B,01,2024,0.00,ZERADO
-98.765.432/0001-10,OPERADORA B,02,2024,800000.00,OK
-```
-
----
-
-## 📊 Relatório de Inconsistências
-
-Arquivo `relatorio_inconsistencias.json` contém:
-
-```json
-{
-  "cnpj_duplicados_suspeitos": [
-    {
-      "cnpj": "12.345.678/0001-90",
-      "razoes_sociais": ["OPERADORA A", "OPERADORA ALPHA"]
-    }
-  ],
-  "valores_invalidos": [
-    {
-      "cnpj": "11.111.111/0001-11",
-      "tipo": "NEGATIVO",
-      "valor": -5000.00
-    },
-    {
-      "cnpj": "22.222.222/0001-22",
-      "tipo": "ZERADO",
-      "valor": 0.00
-    }
-  ],
-  "linhas_processadas": 15420,
-  "linhas_removidas": 342,
-  "linhas_finais": 15078
-}
-```
-
----
-
-## 🔧 Detalhes Técnicos
-
-### Dependências Instaladas
-```
-requests       → Acesso HTTP à API
-pandas         → Processamento de dados
-openpyxl       → Leitura de arquivos Excel
-chardet        → Detecção automática de encoding
-```
-
-### Identificação Automática de Arquivos Relevantes
-
-O script busca por palavras-chave nos nomes de arquivos:
-```python
-['despesa', 'sinistro', 'evento', 'claim', 'expense', 
- 'beneficiario', 'participante', 'custeio']
-```
-
-Se não encontrar, extrai todos os arquivos `.csv`, `.txt`, `.xlsx`
-
-### Detecção Automática de Encoding
-
-Utiliza `chardet` para detectar automaticamente:
-- UTF-8
-- ISO-8859-1 (Latin-1)
-- CP1252 (Windows-1252)
-- Outros codificadores
-
+Próximo passo sugerido: eu arquivar `EXPLICACAO_COMPLETA.md` e `INDICE.md` em `docs/archive/`. Deseja que eu faça isso?
 ---
 
 ## ⚙️ Funcionalidades Avançadas
