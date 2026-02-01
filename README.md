@@ -180,8 +180,7 @@ Mantive algumas notas técnicas em `README_TESTE3.md`; se preferir, posso arquiv
 ---
 
 Se quiser, posso agora:
-- Consolidar/remover os `.md` opcionais para `docs/archive/` (arquivar), e
-- Continuar removendo comentários com tom de IA nos outros arquivos do repositório.
+- Consolidar/remover os `.md` opcionais para `docs/archive/` (arquivar).
 
 Próximo passo sugerido: eu arquivar `EXPLICACAO_COMPLETA.md` e `INDICE.md` em `docs/archive/`. Deseja que eu faça isso?
 ---
